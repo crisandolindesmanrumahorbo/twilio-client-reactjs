@@ -1,5 +1,6 @@
 import Video from 'twilio-video';
 import React from 'react';
+import RecordRTC, {invokeSaveAsDialog} from 'recordrtc';
 
 const container = document.getElementById("video-container");
 
@@ -9,6 +10,8 @@ class VideoContainer extends React.Component {
         this.state = {
             roomName: '',
             showForm: '',
+            blob: null,
+            record: null
         }
     }
 
@@ -27,7 +30,7 @@ class VideoContainer extends React.Component {
         console.log(roomName);
 
         // fetch an Access Token from the join-room route
-        const response = await fetch("http://localhost:5000/join-room", {
+        const response = await fetch("https://161b-2001-448a-50a0-1da-b185-9f97-fff2-54d7.ap.ngrok.io/join-room", {
             method: "POST",
             headers: {
                 Accept: "application/json",
@@ -102,6 +105,42 @@ class VideoContainer extends React.Component {
         return room;
     };
 
+    startRecord = () => {
+        console.log('start');
+        const videoTag = document.getElementsByTagName('video');
+        const audioTag = document.getElementsByTagName('audio');
+        console.log('video tag', videoTag);
+        console.log('audio tag', audioTag);
+
+        let audioStream;
+        const fps = 0;
+        const audioRemote = audioTag[1];
+        if (audioRemote.captureStream) {
+            audioStream = audioRemote.captureStream(fps);
+        } else if (audioRemote.mozCaptureStream) {
+            audioStream = audioRemote.mozCaptureStream(fps);
+        } else {
+            console.error('Stream capture is not supported');
+            audioStream = null;
+        }
+
+        const recorder = RecordRTC(audioStream, {type: 'audio'});
+        this.setState({recorder: recorder});
+        recorder.startRecording();
+    }
+
+    stopRecord = () => {
+        console.log('stop')
+        this.state.recorder.stopRecording(() => {
+            this.setState({blob: this.state.recorder.getBlob()})
+        });
+    }
+
+    save = () => {
+        console.log('save');
+        invokeSaveAsDialog(this.state.blob, 'audio');
+    }
+
     render() {
         return (
             <div>
@@ -109,6 +148,9 @@ class VideoContainer extends React.Component {
                     Enter a Room Name to join: <input type="text" name="roomName" onChange={this.handleChange}/>
                     <button type="click" onClick={async (event) => await this.startRoom(event)}>Join Room</button>
                 </form>
+                <button type="click" onClick={() => this.startRecord()}>Start Record</button>
+                <button type="click" onClick={() => this.stopRecord()}>Stop Record</button>
+                <button type="click" onClick={() => this.save()}>Save</button>
             </div>
 
         );
