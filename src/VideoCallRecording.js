@@ -17,6 +17,18 @@ class VideoCallRecording extends React.Component {
         }
     }
 
+    componentDidMount() {
+        if ('geolocation' in navigator) {
+            console.log("Available");
+            navigator.geolocation.getCurrentPosition((position) => {
+                console.log('Latitude is :', position.coords.latitude);
+                console.log('Longitude is :', position.coords.longitude);
+            });
+        } else {
+            console.log('Not Available');
+        }
+    }
+
     handleChange = (event) => {
         const {name, value} = event.target;
         this.setState({[name]: value});
